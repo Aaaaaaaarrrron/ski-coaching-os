@@ -72,9 +72,9 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 @media(max-width:640px){.rolehint{display:none}}
 
 /* ---------------- views ---------------- */
-.view{display:none;opacity:0;transform:translateY(6px)}
+.view{display:none;opacity:0}
 .view.active{display:block;animation:fade .16s var(--ease) both}
-@keyframes fade{to{opacity:1;transform:none}}
+@keyframes fade{to{opacity:1}}
 
 .shell{display:grid;grid-template-columns:224px 1fr;gap:22px;margin-top:0}
 
