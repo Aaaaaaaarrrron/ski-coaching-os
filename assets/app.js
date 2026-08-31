@@ -57,6 +57,7 @@ function onBatchStudentChange(){
  if(improveEl)improveEl.value='';
  if(nextEl)nextEl.value=prev?prev.next:'';
  if(memoEl)memoEl.value='';
+ setSaveState(false);
  toast(`${s?s.name:''} 학생으로 전환`);
 }
 function renderAdmin(){
@@ -65,9 +66,9 @@ function renderAdmin(){
  document.getElementById('adminDone').textContent=done;
  document.getElementById('adminMissing').textContent=missing;
  document.getElementById('coachStatus').innerHTML=`
- <tr><td><b>최대표</b><div class="sub">주니어/개인</div></td><td>3</td><td>${Math.min(3,1+todaySet.size)}/3</td><td>86%</td><td><span class="pill ${todaySet.size>=2?'':'warn'}">${todaySet.size>=2?'완료':'작성 중'}</span></td></tr>
- <tr><td><b>김강사</b><div class="sub">주니어</div></td><td>4</td><td>4/4</td><td>91%</td><td><span class="pill">완료</span></td></tr>
- <tr><td><b>이강사</b><div class="sub">성인/주니어</div></td><td>5</td><td>5/5</td><td>78%</td><td><span class="pill">완료</span></td></tr>`;
+ <tr><td data-label="강사"><b>최대표</b><div class="sub">주니어/개인</div></td><td data-label="강습">3</td><td data-label="완료">${Math.min(3,1+todaySet.size)}/3</td><td data-label="열람률">86%</td><td data-label="상태"><span class="pill ${todaySet.size>=2?'':'warn'}">${todaySet.size>=2?'완료':'작성 중'}</span></td></tr>
+ <tr><td data-label="강사"><b>김강사</b><div class="sub">주니어</div></td><td data-label="강습">4</td><td data-label="완료">4/4</td><td data-label="열람률">91%</td><td data-label="상태"><span class="pill">완료</span></td></tr>
+ <tr><td data-label="강사"><b>이강사</b><div class="sub">성인/주니어</div></td><td data-label="강습">5</td><td data-label="완료">5/5</td><td data-label="열람률">78%</td><td data-label="상태"><span class="pill">완료</span></td></tr>`;
  document.getElementById('adminActivity').innerHTML=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).slice(0,5).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<div class="activity"><span class="dot"></span><div><b>${s?.name}</b> 리포트 발행<div class="sub">${l.coach} · ${l.skill} · 미디어 ${l.media}개</div></div></div>`}).join('');
  // 박지훈(s3) 리포트 실제 작성 여부에 따라 알림 표시/숨김
  const pjhDone=todaySet.has('s3');
@@ -75,9 +76,13 @@ function renderAdmin(){
 }
 function renderCoach(){
  const doneToday=new Set(lessons.filter(l=>l.date===today()).map(l=>l.studentId));
- document.getElementById('coachToday').innerHTML=[
-  ['s1','10:00','24'],['s2','13:30','14'],['s3','16:30','8']
- ].map(([id,t,m])=>{const s=STUDENTS.find(x=>x.id===id),d=doneToday.has(id);return `<div class="listrow"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${t} · 미디어 ${m} · ${s.level}</div></div></div><div class="actionline"><span class="pill ${d?'':'warn'}">${d?'완료':'미작성'}</span><button class="btn ghost small" onclick="document.getElementById('batchStudent').value='${id}';go('coachBatch')">열기</button></div></div>`}).join('');
+ const todaySessions=[['s1','10:00','24'],['s2','13:30','14'],['s3','16:30','8']];
+ const missing=todaySessions.filter(([id])=>!doneToday.has(id)).length;
+ const heroTitle=document.getElementById('coachHeroTitle');if(heroTitle)heroTitle.textContent=missing>0?`마감 ${missing}건 남음`:'오늘 마감 완료';
+ const badge=document.getElementById('coachTodayBadge');
+ if(badge){badge.textContent=missing>0?`${missing} 미작성`:'모두 완료';badge.classList.toggle('warn',missing>0)}
+ document.getElementById('coachToday').innerHTML=todaySessions
+  .map(([id,t,m])=>{const s=STUDENTS.find(x=>x.id===id),d=doneToday.has(id);return `<div class="listrow"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${t} · 미디어 ${m} · ${s.level}</div></div></div><div class="actionline"><span class="pill ${d?'':'warn'}">${d?'완료':'미작성'}</span><button class="btn ghost small" onclick="document.getElementById('batchStudent').value='${id}';go('coachBatch')">열기</button></div></div>`}).join('');
  document.getElementById('coachCount').textContent=lessons.length;
 }
 function studentMedia(){return media.filter(m=>m.studentId===currentBatchStudent)}
@@ -91,20 +96,31 @@ function renderMedia(){
    <span class="media-meta"><b>${m.type==='video'?'주행 영상':'강습 사진'} ${String(m.id).padStart(2,'0')}</b><span class="small">${m.time}</span></span>
  </button>`).join('');
  document.getElementById('mediaCount').textContent=list.filter(m=>m.selected).length;
- const totalChip=document.querySelector('.filterbar .chip:first-child');
- if(totalChip)totalChip.textContent=`전체 ${list.length}`;
+ const chipT=document.getElementById('chipTotal'),chipP=document.getElementById('chipPhoto'),chipV=document.getElementById('chipVideo');
+ if(chipT)chipT.textContent=`전체 ${list.length}`;
+ if(chipP)chipP.textContent=`사진 ${list.filter(m=>m.type==='photo').length}`;
+ if(chipV)chipV.textContent=`영상 ${list.filter(m=>m.type==='video').length}`;
 }
-function toggleMedia(id){const m=media.find(x=>x.id===id);m.selected=!m.selected;renderMedia()}
-function selectAll(){const list=studentMedia();const all=list.every(m=>m.selected);list.forEach(m=>m.selected=!all);renderMedia()}
+function toggleMedia(id){const m=media.find(x=>x.id===id);m.selected=!m.selected;renderMedia();markDirty()}
+function selectAll(){const list=studentMedia();const all=list.every(m=>m.selected);list.forEach(m=>m.selected=!all);renderMedia();markDirty()}
 // v2.1: 사진 클릭 시 주행영상 플레이어를 덮어쓰던 버그 제거 — 선택 표시(체크)만으로 충분하므로 no-op 처리
 function previewMedia(id){}
 function handleRunVideoError(){const e=document.getElementById('runVideoError');if(e)e.classList.remove('hidden')}
-function append(id,t){const e=document.getElementById(id);e.value+=(e.value?' · ':'')+t}
+function setSaveState(dirty){
+ [document.getElementById('batchSaveState'),document.getElementById('batchSaveStateMobile')].forEach(el=>{
+  if(!el)return;
+  el.classList.toggle('dirty',dirty);el.classList.toggle('saved',!dirty);
+  el.innerHTML=dirty?'<span class="sdot"></span>저장 안 됨':'<span class="sdot"></span>저장됨';
+ });
+}
+function markDirty(){setSaveState(true)}
+function append(id,t){const e=document.getElementById(id);e.value+=(e.value?' · ':'')+t;markDirty()}
 function saveLesson(){
  const sid=document.getElementById('batchStudent').value, s=STUDENTS.find(x=>x.id===sid);
  const l={id:'l'+Date.now(),studentId:sid,date:today(),skill:document.getElementById('skill').value,good:document.getElementById('good').value,improve:document.getElementById('improve').value,next:document.getElementById('nextGoal').value,media:studentMedia().filter(m=>m.selected).length,coach:userName,createdAt:Date.now()};
  lessons.push(l);localStorage.setItem('yusimi_v2_lessons',JSON.stringify(lessons));
  parentStudentId=sid; // Coach가 저장한 학생 기준으로 Parent 화면 즉시 반영
+ setSaveState(false);
  renderAll();toast(`${s.name} 발행 완료 · Parent에 반영됨`);setTimeout(()=>switchRole('parent'),700)
 }
 let parentStudentId='s1';
@@ -114,8 +130,8 @@ function renderParent(){
  const uavatar=document.querySelector('#parentHome .avatar');if(uavatar&&ps)uavatar.textContent=ps.name[0];
  const coverTitle=document.querySelector('#parentHome .parent-cover h1');if(coverTitle&&ps)coverTitle.textContent=`${ps.name} 성장 기록`;
  const ls=lessons.filter(l=>l.studentId===parentStudentId).sort((a,b)=>b.createdAt-a.createdAt),l=ls[0];
- document.getElementById('parentLatest').innerHTML=l?`<div class="report"><div class="reporthead"><div class="small" style="color:rgba(255,255,255,.65)">LATEST REPORT</div><h2 style="margin:5px 0">${l.date} · ${l.coach}</h2><div>${l.skill}</div></div><div class="reportbody"><div class="rblock"><div class="rlabel">잘한 점</div>${l.good}</div><div class="rblock"><div class="rlabel">보완할 점</div>${l.improve}</div><div class="rblock"><div class="rlabel">다음 목표</div><b>${l.next}</b></div><div class="rblock"><div class="rlabel">미디어</div>${l.media}개 연결</div></div></div>`:'<div class="small muted" style="padding:14px 0">아직 발행된 리포트가 없습니다.</div>';
- document.getElementById('parentTimeline').innerHTML=ls.map(l=>`<div class="activity"><span class="dot"></span><div><b>${l.skill}</b><div class="sub">${l.date} · ${l.good}<br>다음 목표: ${l.next}</div></div></div>`).join('')||'<div class="small muted">기록 없음</div>';
+ document.getElementById('parentLatest').innerHTML=l?`<div class="report"><div class="reporthead"><div class="small" style="color:rgba(255,255,255,.65)">LATEST REPORT</div><h2 style="margin:5px 0">${l.date} · ${l.coach}</h2><div>${l.skill}</div></div><div class="reportbody"><div class="rblock good"><div class="rblock-body"><div class="rlabel">잘한 점</div>${l.good}</div></div><div class="rblock improve"><div class="rblock-body"><div class="rlabel">보완할 점</div>${l.improve}</div></div><div class="rblock next"><div class="rblock-body"><div class="rlabel">다음 목표</div><b>${l.next}</b></div></div><div class="rblock"><div class="rblock-body"><div class="rlabel">미디어</div>${l.media}개 연결</div></div></div></div>`:'<div class="empty-state">아직 발행된 리포트가 없습니다.</div>';
+ document.getElementById('parentTimeline').innerHTML=ls.map(l=>`<div class="activity"><span class="dot"></span><div><b>${l.skill}</b><div class="sub">${l.date} · ${l.good}<br>다음 목표: ${l.next}</div></div></div>`).join('')||'<div class="empty-state">기록 없음</div>';
  const pMedia=media.filter(m=>m.studentId===parentStudentId);
  document.getElementById('parentGallery').innerHTML=pMedia.slice(0,12).map(m=>`<button class="thumb" onclick="${m.type==='video'?`window.open('${STOCK_VIDEO_PAGE}','_blank')`:`toast('강습 사진 ${String(m.id).padStart(2,'0')}')`}">${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}<img src="${m.src}" alt="ski lesson media" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"></button>`).join('');
 }
@@ -125,17 +141,17 @@ function renderExtraViews(){
  if(adminStudents)adminStudents.innerHTML=STUDENTS.map(s=>`<div class="listrow"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${s.program} · ${s.level}</div></div></div><span class="pill">활성</span></div>`).join('');
  const ar=document.getElementById('adminRecordRows');
  if(ar){
-  const publishedRows=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<tr><td><b>${s?.name||'-'}</b><div class="sub">${l.date}</div></td><td>${l.coach}</td><td>${l.skill}</td><td>${l.media}개</td><td><span class="pill">발행</span></td></tr>`}).join('');
+  const publishedRows=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<tr><td data-label="수강생"><b>${s?.name||'-'}</b><div class="sub">${l.date}</div></td><td data-label="강사">${l.coach}</td><td data-label="기술">${l.skill}</td><td data-label="미디어">${l.media}개</td><td data-label="상태"><span class="pill">발행</span></td></tr>`}).join('');
   const pjhToday=lessons.some(l=>l.studentId==='s3'&&l.date===today());
-  const pjhRow=pjhToday?'':`<tr><td><b>박지훈</b><div class="sub">${today()}</div></td><td>${userName}</td><td>카빙 입문</td><td>-</td><td><span class="pill warn">미작성</span></td></tr>`;
-  ar.innerHTML=publishedRows+pjhRow;
+  const pjhRow=pjhToday?'':`<tr><td data-label="수강생"><b>박지훈</b><div class="sub">${today()}</div></td><td data-label="강사">${userName}</td><td data-label="기술">카빙 입문</td><td data-label="미디어">-</td><td data-label="상태"><span class="pill warn">미작성</span></td></tr>`;
+  ar.innerHTML=(publishedRows+pjhRow)||'<tr class="empty-row"><td colspan="5">아직 기록이 없습니다.</td></tr>';
  }
  const cs=document.getElementById('coachStudentCards');
  if(cs)cs.innerHTML=STUDENTS.map((s,i)=>{const ls=lessons.filter(l=>l.studentId===s.id).sort((a,b)=>b.createdAt-a.createdAt),l=ls[0];return `<div class="studentcard"><div class="student-head"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${s.program}</div></div></div><span class="pill">${s.level}</span></div><p>${l?`최근: ${l.skill}<br>다음 목표: ${l.next}`:'아직 누적 기록 없음'}</p><div class="actionline"><button class="btn ghost small" onclick="document.getElementById('batchStudent').value='${s.id}';go('coachBatch')">새 기록</button></div></div>`}).join('');
  const cr=document.getElementById('coachRecordList');
  if(cr)cr.innerHTML=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<div class="record-card"><div class="record-top"><div><b>${s?.name} · ${l.skill}</b><div class="sub">${l.date} · ${l.coach}</div></div><span class="pill">${l.media} media</span></div><p>${l.good}<br><b>다음:</b> ${l.next}</p></div>`}).join('');
  const pr=document.getElementById('parentReportArchive');
- if(pr){const ls=lessons.filter(l=>l.studentId===parentStudentId).sort((a,b)=>b.createdAt-a.createdAt);pr.innerHTML=ls.map((l,i)=>`<div class="card ${i===0?'em':''}"><div class="section"><div><h2>${l.date}</h2><div class="small">${l.coach} · ${l.skill}</div></div>${i===0?'<span class="pill">NEW</span>':''}</div><div class="rblock"><div class="rlabel">잘한 점</div>${l.good}</div><div class="rblock"><div class="rlabel">보완할 점</div>${l.improve}</div><div class="rblock"><div class="rlabel">다음 목표</div><b>${l.next}</b></div><div class="rblock"><div class="rlabel">미디어</div>${l.media}개 연결</div></div>`).join('')||'<div class="small muted" style="padding:14px 0">아직 리포트가 없습니다.</div>'}
+ if(pr){const ls=lessons.filter(l=>l.studentId===parentStudentId).sort((a,b)=>b.createdAt-a.createdAt);pr.innerHTML=ls.map((l,i)=>`<div class="report" style="margin:12px 0"><div class="reporthead"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="small" style="color:rgba(255,255,255,.65)">${l.date}</div><h2 style="margin:5px 0">${l.coach} · ${l.skill}</h2></div>${i===0?'<span class="pill">NEW</span>':''}</div></div><div class="reportbody"><div class="rblock good"><div class="rblock-body"><div class="rlabel">잘한 점</div>${l.good}</div></div><div class="rblock improve"><div class="rblock-body"><div class="rlabel">보완할 점</div>${l.improve}</div></div><div class="rblock next"><div class="rblock-body"><div class="rlabel">다음 목표</div><b>${l.next}</b></div></div><div class="rblock"><div class="rblock-body"><div class="rlabel">미디어</div>${l.media}개 연결</div></div></div></div>`).join('')||'<div class="empty-state">아직 리포트가 없습니다.</div>'}
  const pm=document.getElementById('parentMediaArchive');
  if(pm){const pms=media.filter(m=>m.studentId===parentStudentId);pm.innerHTML=pms.slice(0,8).map(m=>`<button class="thumb" onclick="${m.type==='video'?`window.open('${STOCK_VIDEO_PAGE}','_blank')`:`toast('강습 사진 ${String(m.id).padStart(2,'0')} 확대 보기')`}">${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}<img src="${m.src}" alt="ski lesson media" onerror="this.style.display='none'"></button>`).join('')}
 }
