@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F7F9F9">
-<title>YUSIMI Beta v2.0.3 — Run Video Demo</title>
+<title>YUSIMI Beta v2.1.0 — Run Video Demo</title>
 <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
 
 <div id="loginScreen" class="loginwrap">
   <div class="login">
-    <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.0.3</span></div>
+    <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.1.0</span></div>
     <h1 style="font-size:34px;letter-spacing:-1.2px;margin:22px 0 4px">YUSIMI Operations</h1>
     <div class="muted">역할 선택</div>
     <div class="rolecards">
@@ -69,7 +69,7 @@
           <div class="grid2">
             <div class="card em">
               <div class="section"><h2>오늘 액션</h2><span class="pill warn">3</span></div>
-              <div class="alertbox"><div><b>최대표 · 박지훈</b><div class="sub">16:30 강습 · 아직 미작성</div></div><button class="btn warn small" onclick="toast('리마인드 전송')">리마인드</button></div>
+              <div class="alertbox" id="pjhAlertHome"><div><b>최대표 · 박지훈</b><div class="sub">16:30 강습 · 아직 미작성</div></div><button class="btn warn small" onclick="toast('리마인드 전송')">리마인드</button></div>
               <div class="alertbox"><div><b>Parent 미열람 3건</b><div class="sub">발행 후 6시간 경과</div></div><button class="btn ghost small" onclick="toast('미열람 목록')">보기</button></div>
               <div class="alertbox"><div><b>담당 강사 변경 1건</b><div class="sub">내일 10:00 · 김민준</div></div><button class="btn ghost small" onclick="toast('인수인계 확인')">확인</button></div>
             </div>
@@ -172,9 +172,11 @@
                 </div>
                 <div class="preview real-run-video">
                   <video id="runVideoPlayer" controls playsinline preload="metadata"
-                    poster="https://images.pexels.com/photos/20159352/pexels-photo-20159352.jpeg?auto=compress&cs=tinysrgb&w=1200">
+                    poster="https://images.pexels.com/photos/20159352/pexels-photo-20159352.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                    onerror="handleRunVideoError()">
                     <source src="https://www.pexels.com/download/video/4568014/" type="video/mp4">
                   </video>
+                  <div id="runVideoError" class="small hidden" style="padding:10px 13px;color:#FFD9A0;background:#3A2418">영상을 불러오지 못했습니다. '원본' 버튼으로 직접 확인해 주세요.</div>
                   <div class="runvideo-info">
                     <b id="runVideoTitle">주행 A · 주니어 기본 주행</b>
                     <div id="runVideoDesc" class="small">턴 연결 · 상체 안정 · 엣지 전환</div>
@@ -310,7 +312,7 @@
           <div class="hero with-art"><div class="kicker">ALERTS & DEADLINES</div><h1>알림 & 마감</h1><p>운영자가 놓치면 안 되는 작업</p></div>
           <div class="grid2">
             <div class="card em"><div class="section"><h2>마감 필요</h2><span class="pill warn">2</span></div>
-              <div class="alertbox"><div><b>박지훈 리포트 미작성</b><div class="sub">최대표 · 16:30 강습</div></div><button class="btn warn small" onclick="toast('최대표에게 리마인드 전송')">리마인드</button></div>
+              <div class="alertbox" id="pjhAlertPage"><div><b>박지훈 리포트 미작성</b><div class="sub">최대표 · 16:30 강습</div></div><button class="btn warn small" onclick="toast('최대표에게 리마인드 전송')">리마인드</button></div>
               <div class="alertbox"><div><b>Parent 미열람</b><div class="sub">3건 · 발행 후 6시간 경과</div></div><button class="btn ghost small" onclick="toast('미열람 대상에게 알림 준비')">확인</button></div>
             </div>
             <div class="card"><div class="section"><h2>내일 변경</h2><span class="small">handoff</span></div>
