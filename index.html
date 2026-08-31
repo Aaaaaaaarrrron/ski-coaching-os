@@ -4,14 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#F7F9F9">
-<title>YUSIMI Beta v2.1.0 — Run Video Demo</title>
+<title>YUSIMI Beta v2.2.0 — Product Design Refresh</title>
 <link rel="stylesheet" href="assets/app.css">
 </head>
 <body>
 
 <div id="loginScreen" class="loginwrap">
   <div class="login">
-    <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.1.0</span></div>
+    <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.2.0</span></div>
     <h1 style="font-size:34px;letter-spacing:-1.2px;margin:22px 0 4px">YUSIMI Operations</h1>
     <div class="muted">역할 선택</div>
     <div class="rolecards">
@@ -27,7 +27,7 @@
 <div id="mainApp" class="hidden">
   <div class="topbar">
     <div class="topin">
-      <div class="brand"><img src="assets/logo.svg"><span class="version">Visual Rebuild</span></div>
+      <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.2.0</span></div>
       <div class="rolebar">
         <button class="rolebtn" data-role="coach" onclick="switchRole('coach')">Coach</button>
         <button class="rolebtn" data-role="parent" onclick="switchRole('parent')">Parent</button>
@@ -106,6 +106,7 @@
           </div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn active" onclick="go('adminHome')"><img src="assets/dashboard.svg"><span>대시보드</span></button><button class="mobilebtn" onclick="go('adminPeople')"><img src="assets/people.svg"><span>강사·수강생</span></button><button class="mobilebtn" onclick="go('adminRecords')"><img src="assets/report.svg"><span>Lesson Records</span></button><button class="mobilebtn" onclick="go('adminAlerts')"><img src="assets/bell.svg"><span>알림·마감</span></button></nav>
     </section>
 
     <!-- COACH -->
@@ -122,7 +123,7 @@
         <main class="main">
           <div class="hero with-art">
             <div class="kicker">COACH · EVENING BATCH</div>
-            <h1>마감 2건 남음</h1>
+            <h1 id="coachHeroTitle">마감 2건 남음</h1>
             <p>미디어 · 피드백 · 발행</p>
             <div class="hero-actions"><button class="btn white" onclick="go('coachBatch')">마감 시작</button></div>
           </div>
@@ -133,7 +134,7 @@
             <div class="metric"><span>누적 기록</span><b id="coachCount">0</b></div>
           </div>
           <div class="card em">
-            <div class="section"><h2>오늘 강습</h2><span class="pill warn">2 미작성</span></div>
+            <div class="section"><h2>오늘 강습</h2><span class="pill warn" id="coachTodayBadge">2 미작성</span></div>
             <div id="coachToday"></div>
           </div>
           <div class="grid2">
@@ -142,6 +143,7 @@
           </div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn active" onclick="go('coachHome')"><img src="assets/home.svg"><span>오늘</span></button><button class="mobilebtn" onclick="go('coachBatch')"><img src="assets/media.svg"><span>Evening Batch</span></button><button class="mobilebtn" onclick="go('coachStudents')"><img src="assets/people.svg"><span>수강생</span></button><button class="mobilebtn" onclick="go('coachRecords')"><img src="assets/report.svg"><span>기록</span></button></nav>
     </section>
 
     <section id="coachBatch" class="view">
@@ -154,13 +156,13 @@
         </aside>
         <main class="main">
           <div class="card em">
-            <div class="section"><div><h2>Evening Batch</h2><div class="small">미디어 선택 · 세션 피드백</div></div><span class="pill">AUTO SAVE</span></div>
+            <div class="section"><div><h2>Evening Batch</h2><div class="small">미디어 선택 · 세션 피드백</div></div><span class="savestate saved" id="batchSaveState"><span class="sdot"></span>저장됨</span></div>
             <div class="grid2"><div><label>수강생</label><select id="batchStudent"></select></div><div><label>세션</label><select><option>10:00–12:00 · 2시간</option></select></div></div>
           </div>
           <div class="media-shell">
             <div class="card">
               <div class="section"><div><h2>오늘 미디어</h2><div class="small"><span id="mediaCount">0</span> selected</div></div><button class="btn ghost small" onclick="selectAll()">전체 선택</button></div>
-              <div class="filterbar" style="margin-bottom:10px"><button class="chip active">전체 30</button><button class="chip">사진 24</button><button class="chip">영상 6</button></div>
+              <div class="filterbar" style="margin-bottom:10px"><button class="chip active" id="chipTotal">전체 0</button><button class="chip" id="chipPhoto">사진 0</button><button class="chip" id="chipVideo">영상 0</button></div>
               <div class="media-grid" id="mediaGrid"></div>
             </div>
             <div>
@@ -188,21 +190,26 @@
                   <button class="btn ghost small" onclick="forwardRunVideo()">+5초</button>
                   <button class="btn ghost small" onclick="openCurrentVideoSource()">원본</button>
                 </div>
-                <label>영상 코멘트</label><textarea id="videoMemo" placeholder="00:12 좌턴 상체 선행"></textarea>
+                <label>영상 코멘트</label><textarea id="videoMemo" placeholder="00:12 좌턴 상체 선행" oninput="markDirty()"></textarea>
                 <div class="chips" style="margin-top:8px"><button class="chip" onclick="append('videoMemo','턴 초반 상체 선행')">턴 초반 상체</button><button class="chip" onclick="append('videoMemo','바깥발 하중 안정')">바깥발 하중</button><button class="chip" onclick="append('videoMemo','폴체킹 타이밍 좋음')">폴체킹</button></div>
               </div>
               <div class="card em">
                 <div class="section"><h2>세션 피드백</h2><span class="pill">ONE RECORD</span></div>
-                <label>진행 기술</label><input id="skill" value="베이직 패러렐">
-                <label>잘한 점</label><textarea id="good">바깥발 하중이 이전보다 안정적이었고 턴 후반 자세가 좋아졌습니다.</textarea>
-                <label>보완할 점</label><textarea id="improve">좌턴에서 상체가 먼저 들어가는 경향이 남아 있습니다.</textarea>
-                <label>다음 목표</label><input id="nextGoal" value="폴체킹과 턴 리듬 연결">
-                <div class="actionline" style="margin-top:14px"><button class="btn primary" onclick="saveLesson()">저장 & 발행</button><button class="btn ghost" onclick="toast('공유 링크 생성')">공유</button></div>
+                <label>진행 기술</label><input id="skill" value="베이직 패러렐" oninput="markDirty()">
+                <label>잘한 점</label><textarea id="good" oninput="markDirty()">바깥발 하중이 이전보다 안정적이었고 턴 후반 자세가 좋아졌습니다.</textarea>
+                <label>보완할 점</label><textarea id="improve" oninput="markDirty()">좌턴에서 상체가 먼저 들어가는 경향이 남아 있습니다.</textarea>
+                <label>다음 목표</label><input id="nextGoal" value="폴체킹과 턴 리듬 연결" oninput="markDirty()">
+                <div class="actionline" style="margin-top:14px" id="batchActionline"><button class="btn primary" onclick="saveLesson()">저장 & 발행</button><button class="btn ghost" onclick="toast('공유 링크 생성')">공유</button></div>
               </div>
             </div>
           </div>
         </main>
       </div>
+      <div class="batch-stickybar">
+        <span class="savestate saved" id="batchSaveStateMobile"><span class="sdot"></span>저장됨</span>
+        <button class="btn primary" onclick="saveLesson()">저장 &amp; 발행</button>
+      </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('coachHome')"><img src="assets/home.svg"><span>오늘</span></button><button class="mobilebtn active" onclick="go('coachBatch')"><img src="assets/media.svg"><span>Evening Batch</span></button><button class="mobilebtn" onclick="go('coachStudents')"><img src="assets/people.svg"><span>수강생</span></button><button class="mobilebtn" onclick="go('coachRecords')"><img src="assets/report.svg"><span>기록</span></button></nav>
     </section>
 
     <!-- PARENT -->
@@ -244,6 +251,7 @@
           <div class="card"><div class="section"><h2>미디어</h2><span class="small">전체 보기</span></div><div class="gallery" id="parentGallery"></div></div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn active" onclick="go('parentHome')"><img src="assets/home.svg"><span>홈</span></button><button class="mobilebtn" onclick="go('parentReports')"><img src="assets/report.svg"><span>리포트</span></button><button class="mobilebtn" onclick="go('parentMedia')"><img src="assets/media.svg"><span>미디어</span></button></nav>
     </section>
 
     <!-- ADMIN PEOPLE -->
@@ -275,6 +283,7 @@
           </div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('adminHome')"><img src="assets/dashboard.svg"><span>대시보드</span></button><button class="mobilebtn active" onclick="go('adminPeople')"><img src="assets/people.svg"><span>강사·수강생</span></button><button class="mobilebtn" onclick="go('adminRecords')"><img src="assets/report.svg"><span>Lesson Records</span></button><button class="mobilebtn" onclick="go('adminAlerts')"><img src="assets/bell.svg"><span>알림·마감</span></button></nav>
     </section>
 
     <!-- ADMIN RECORDS -->
@@ -295,6 +304,7 @@
           </div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('adminHome')"><img src="assets/dashboard.svg"><span>대시보드</span></button><button class="mobilebtn" onclick="go('adminPeople')"><img src="assets/people.svg"><span>강사·수강생</span></button><button class="mobilebtn active" onclick="go('adminRecords')"><img src="assets/report.svg"><span>Lesson Records</span></button><button class="mobilebtn" onclick="go('adminAlerts')"><img src="assets/bell.svg"><span>알림·마감</span></button></nav>
     </section>
 
     <!-- ADMIN ALERTS -->
@@ -317,12 +327,13 @@
             </div>
             <div class="card"><div class="section"><h2>내일 변경</h2><span class="small">handoff</span></div>
               <div class="listrow"><div><b>김민준</b><div class="sub">최대표 → 이강사 · 10:00</div></div><span class="pill">인수인계</span></div>
-              <div class="rblock"><div class="rlabel">최근 진행</div>베이직 패러렐</div>
-              <div class="rblock"><div class="rlabel">다음 목표</div><b>폴체킹과 턴 리듬 연결</b></div>
+              <div class="rblock"><div class="rblock-body"><div class="rlabel">최근 진행</div>베이직 패러렐</div></div>
+              <div class="rblock"><div class="rblock-body"><div class="rlabel">다음 목표</div><b>폴체킹과 턴 리듬 연결</b></div></div>
             </div>
           </div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('adminHome')"><img src="assets/dashboard.svg"><span>대시보드</span></button><button class="mobilebtn" onclick="go('adminPeople')"><img src="assets/people.svg"><span>강사·수강생</span></button><button class="mobilebtn" onclick="go('adminRecords')"><img src="assets/report.svg"><span>Lesson Records</span></button><button class="mobilebtn active" onclick="go('adminAlerts')"><img src="assets/bell.svg"><span>알림·마감</span></button></nav>
     </section>
 
     <!-- COACH STUDENTS -->
@@ -341,6 +352,7 @@
           <div class="card em"><div class="section"><h2>내 수강생</h2><span class="small">4 students</span></div><div id="coachStudentCards" class="studentcards"></div></div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('coachHome')"><img src="assets/home.svg"><span>오늘</span></button><button class="mobilebtn" onclick="go('coachBatch')"><img src="assets/media.svg"><span>Evening Batch</span></button><button class="mobilebtn active" onclick="go('coachStudents')"><img src="assets/people.svg"><span>수강생</span></button><button class="mobilebtn" onclick="go('coachRecords')"><img src="assets/report.svg"><span>기록</span></button></nav>
     </section>
 
     <!-- COACH RECORDS -->
@@ -359,6 +371,7 @@
           <div class="card em"><div id="coachRecordList"></div></div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('coachHome')"><img src="assets/home.svg"><span>오늘</span></button><button class="mobilebtn" onclick="go('coachBatch')"><img src="assets/media.svg"><span>Evening Batch</span></button><button class="mobilebtn" onclick="go('coachStudents')"><img src="assets/people.svg"><span>수강생</span></button><button class="mobilebtn active" onclick="go('coachRecords')"><img src="assets/report.svg"><span>기록</span></button></nav>
     </section>
 
     <!-- PARENT REPORTS -->
@@ -376,6 +389,7 @@
           <div id="parentReportArchive"></div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('parentHome')"><img src="assets/home.svg"><span>홈</span></button><button class="mobilebtn active" onclick="go('parentReports')"><img src="assets/report.svg"><span>리포트</span></button><button class="mobilebtn" onclick="go('parentMedia')"><img src="assets/media.svg"><span>미디어</span></button></nav>
     </section>
 
     <!-- PARENT MEDIA -->
@@ -393,6 +407,7 @@
           <div class="card em"><div class="section"><h2>2026.08.15</h2><span class="pill">8 media</span></div><div class="gallery rich" id="parentMediaArchive"></div></div>
         </main>
       </div>
+    <nav class="mobilebar"><button class="mobilebtn" onclick="go('parentHome')"><img src="assets/home.svg"><span>홈</span></button><button class="mobilebtn" onclick="go('parentReports')"><img src="assets/report.svg"><span>리포트</span></button><button class="mobilebtn active" onclick="go('parentMedia')"><img src="assets/media.svg"><span>미디어</span></button></nav>
     </section>
 
   </div>
