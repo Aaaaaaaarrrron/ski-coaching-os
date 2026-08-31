@@ -3,15 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#F7F9F9">
-<title>YUSIMI Beta v2.2.0 — Product Design Refresh</title>
-<link rel="stylesheet" href="assets/app.css?v=2.2.0">
+<meta name="theme-color" content="#0E1826">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>YUSIMI Beta v2.3.0 — Visual Transformation</title>
+<link rel="stylesheet" href="assets/app.css?v=2.3.0">
 </head>
 <body>
 
 <div id="loginScreen" class="loginwrap">
   <div class="login">
-    <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.2.0</span></div>
+    <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.3.0</span></div>
     <h1 style="font-size:34px;letter-spacing:-1.2px;margin:22px 0 4px">YUSIMI Operations</h1>
     <div class="muted">역할 선택</div>
     <div class="rolecards">
@@ -27,7 +29,7 @@
 <div id="mainApp" class="hidden">
   <div class="topbar">
     <div class="topin">
-      <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.2.0</span></div>
+      <div class="brand"><img src="assets/logo.svg"><span class="version">Beta v2.3.0</span></div>
       <div class="rolebar">
         <button class="rolebtn" data-role="coach" onclick="switchRole('coach')">Coach</button>
         <button class="rolebtn" data-role="parent" onclick="switchRole('parent')">Parent</button>
@@ -52,26 +54,28 @@
         </aside>
 
         <main class="main">
-          <div class="hero with-art">
-            <div class="kicker">SCHOOL ADMIN</div>
-            <h1>오늘 운영 현황</h1>
-            <p>미작성 · 열람 · 배정 · 마감</p>
-            <div class="hero-actions"><button class="btn white" onclick="toast('미작성 강사에게 리마인드 전송')">미작성 리마인드</button><button class="btn ghost" onclick="toast('오늘 리포트 목록 열기')">Lesson Records</button></div>
+          <div class="cmd-header grain">
+            <div class="cmd-date">SCHOOL ADMIN · 최대표</div>
+            <h1>오늘 <b id="adminMissingHeadline">2건</b> 처리 필요</h1>
+            <p class="cmd-sub">미작성 · Parent 미열람 · 인수인계</p>
+            <div class="cmd-cta">
+              <span class="statline">
+                <span class="s-item"><b id="adminDone">10</b><span>완료</span></span>
+                <span class="s-item"><b id="adminMissing">2</b><span>미작성</span></span>
+                <span class="s-item"><b>84%</b><span>Parent 열람률</span></span>
+              </span>
+            </div>
           </div>
 
-          <div class="grid4">
-            <div class="metric"><span>오늘 강습</span><b>12</b><em>+3 vs 어제</em></div>
-            <div class="metric"><span>리포트 완료</span><b id="adminDone">10</b><em>83%</em></div>
-            <div class="metric alert"><span>미작성</span><b id="adminMissing">2</b><em style="color:#C87A13">action needed</em></div>
-            <div class="metric"><span>Parent 열람률</span><b>84%</b><em>+6%</em></div>
+          <div class="card em" style="margin-top:18px">
+            <div class="section"><h2>지금 처리할 업무</h2><span class="pill warn">3</span></div>
+            <div class="queue" id="adminQueue"></div>
           </div>
 
           <div class="grid2">
-            <div class="card em">
-              <div class="section"><h2>오늘 액션</h2><span class="pill warn">3</span></div>
-              <div class="alertbox" id="pjhAlertHome"><div><b>최대표 · 박지훈</b><div class="sub">16:30 강습 · 아직 미작성</div></div><button class="btn warn small" onclick="toast('리마인드 전송')">리마인드</button></div>
-              <div class="alertbox"><div><b>Parent 미열람 3건</b><div class="sub">발행 후 6시간 경과</div></div><button class="btn ghost small" onclick="toast('미열람 목록')">보기</button></div>
-              <div class="alertbox"><div><b>담당 강사 변경 1건</b><div class="sub">내일 10:00 · 김민준</div></div><button class="btn ghost small" onclick="toast('인수인계 확인')">확인</button></div>
+            <div class="card">
+              <div class="section"><h2>강사별 마감</h2><span class="small">오늘</span></div>
+              <table class="ops-table"><thead><tr><th>강사</th><th>강습</th><th>완료</th><th>열람률</th><th>상태</th></tr></thead><tbody id="coachStatus"></tbody></table>
             </div>
             <div class="card">
               <div class="section"><h2>7일 완료율</h2><span class="pill">92%</span></div>
@@ -87,11 +91,6 @@
             </div>
           </div>
 
-          <div class="card">
-            <div class="section"><h2>강사별 마감</h2><span class="small">오늘</span></div>
-            <table class="ops-table"><thead><tr><th>강사</th><th>강습</th><th>완료</th><th>열람률</th><th>상태</th></tr></thead><tbody id="coachStatus"></tbody></table>
-          </div>
-
           <div class="grid2">
             <div class="card">
               <div class="section"><h2>오늘 배정</h2><span class="small">12 sessions</span></div>
@@ -100,7 +99,7 @@
               <div class="listrow"><div><b>16:30</b><div class="sub">박지훈 · 최대표</div></div><span class="pill gray">1:1</span></div>
             </div>
             <div class="card">
-              <div class="section"><h2>최근 활동</h2><span class="small">Live</span></div>
+              <div class="section"><h2>최근 발행 기록</h2><span class="small">Live</span></div>
               <div id="adminActivity"></div>
             </div>
           </div>
@@ -121,23 +120,18 @@
           <button class="sidebtn" onclick="go('coachRecords')"><img src="assets/report.svg">기록</button>
         </aside>
         <main class="main">
-          <div class="hero with-art">
-            <div class="kicker">COACH · EVENING BATCH</div>
-            <h1 id="coachHeroTitle">마감 2건 남음</h1>
-            <p>미디어 · 피드백 · 발행</p>
-            <div class="hero-actions"><button class="btn white" onclick="go('coachBatch')">마감 시작</button></div>
+          <div class="cmd-header grain">
+            <div class="cmd-date" id="coachDateLine">8월 31일 월요일 · 최대표</div>
+            <h1 id="coachHeroTitle">마감 <b>2건</b> 남음</h1>
+            <p class="cmd-sub">오늘 강습 3건 · 미디어 46개 · 다음 강습까지 곧</p>
+            <div class="timeline-strip" id="coachTimelineStrip"></div>
+            <div class="cmd-cta"><button class="btn primary lg" onclick="go('coachBatch')">Evening Batch 시작 →</button><span class="statline"><span class="s-item"><b id="coachCount">0</b><span>누적 기록</span></span></span></div>
           </div>
-          <div class="grid4">
-            <div class="metric"><span>오늘 강습</span><b>3</b></div>
-            <div class="metric alert"><span>미작성</span><b>2</b></div>
-            <div class="metric"><span>오늘 미디어</span><b>46</b></div>
-            <div class="metric"><span>누적 기록</span><b id="coachCount">0</b></div>
-          </div>
-          <div class="card em">
+          <div class="card em" style="margin-top:18px">
             <div class="section"><h2>오늘 강습</h2><span class="pill warn" id="coachTodayBadge">2 미작성</span></div>
             <div id="coachToday"></div>
           </div>
-          <div class="grid2">
+          <div class="grid2 compact">
             <div class="card"><div class="section"><h2>이번 주</h2><span class="small">7일</span></div><div class="grid3"><div class="metric"><span>강습</span><b>18</b></div><div class="metric"><span>평균 마감</span><b>11m</b></div><div class="metric"><span>열람률</span><b>87%</b></div></div></div>
             <div class="card"><div class="section"><h2>최근 목표</h2><span class="small">학생별</span></div><div class="listrow"><div><b>김민준</b><div class="sub">폴체킹과 턴 리듬 연결</div></div><span class="pill">진행 중</span></div><div class="listrow"><div><b>이서윤</b><div class="sub">베이직 패러렐 진입</div></div><span class="pill">다음</span></div></div>
           </div>
@@ -155,34 +149,28 @@
           <button class="sidebtn active"><img src="assets/media.svg">Evening Batch</button>
         </aside>
         <main class="main">
-          <div class="card em">
-            <div class="section"><div><h2>Evening Batch</h2><div class="small">미디어 선택 · 세션 피드백</div></div><span class="savestate saved" id="batchSaveState"><span class="sdot"></span>저장됨</span></div>
+          <div class="section" style="margin-bottom:2px"><div><h2 class="display" style="font-size:var(--fs-xl)">Evening Batch</h2><div class="small" id="batchStudentLine">학생 · 오늘 세션 피드백</div></div><span class="savestate saved" id="batchSaveState"><span class="sdot"></span>저장됨</span></div>
+          <div class="card" style="margin-top:8px">
             <div class="grid2"><div><label>수강생</label><select id="batchStudent"></select></div><div><label>세션</label><select><option>10:00–12:00 · 2시간</option></select></div></div>
           </div>
-          <div class="media-shell">
-            <div class="card">
-              <div class="section"><div><h2>오늘 미디어</h2><div class="small"><span id="mediaCount">0</span> selected</div></div><button class="btn ghost small" onclick="selectAll()">전체 선택</button></div>
-              <div class="filterbar" style="margin-bottom:10px"><button class="chip active" id="chipTotal">전체 0</button><button class="chip" id="chipPhoto">사진 0</button><button class="chip" id="chipVideo">영상 0</button></div>
-              <div class="media-grid" id="mediaGrid"></div>
-            </div>
-            <div>
-              <div class="card">
+
+          <div class="batch-workspace">
+            <div class="batch-video-pane">
+              <div class="preview real-run-video" style="border-radius:var(--r2) var(--r2) 0 0">
                 <div class="runvideo-switcher">
                   <button class="chip active" data-runvideo="0" onclick="selectRunVideo(0)">주행 A</button>
                   <button class="chip" data-runvideo="1" onclick="selectRunVideo(1)">주행 B</button>
                   <button class="chip" data-runvideo="2" onclick="selectRunVideo(2)">주행 C</button>
                 </div>
-                <div class="preview real-run-video">
-                  <video id="runVideoPlayer" controls playsinline preload="metadata"
-                    poster="https://images.pexels.com/photos/20159352/pexels-photo-20159352.jpeg?auto=compress&cs=tinysrgb&w=1200"
-                    onerror="handleRunVideoError()">
-                    <source src="https://www.pexels.com/download/video/4568014/" type="video/mp4">
-                  </video>
-                  <div id="runVideoError" class="small hidden" style="padding:10px 13px;color:#FFD9A0;background:#3A2418">영상을 불러오지 못했습니다. '원본' 버튼으로 직접 확인해 주세요.</div>
-                  <div class="runvideo-info">
-                    <b id="runVideoTitle">주행 A · 주니어 기본 주행</b>
-                    <div id="runVideoDesc" class="small">턴 연결 · 상체 안정 · 엣지 전환</div>
-                  </div>
+                <video id="runVideoPlayer" controls playsinline preload="metadata"
+                  poster="https://images.pexels.com/photos/20159352/pexels-photo-20159352.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                  onerror="handleRunVideoError()">
+                  <source src="https://www.pexels.com/download/video/4568014/" type="video/mp4">
+                </video>
+                <div id="runVideoError" class="small hidden" style="padding:10px 13px;color:#FFD9A0;background:#3A2418">영상을 불러오지 못했습니다. '원본' 버튼으로 직접 확인해 주세요.</div>
+                <div class="runvideo-info">
+                  <b id="runVideoTitle">주행 A · 주니어 기본 주행</b>
+                  <div id="runVideoDesc" class="small">턴 연결 · 상체 안정 · 엣지 전환</div>
                 </div>
                 <div class="video-controls">
                   <button class="btn ghost small" onclick="rewindRunVideo()">-5초</button>
@@ -190,11 +178,21 @@
                   <button class="btn ghost small" onclick="forwardRunVideo()">+5초</button>
                   <button class="btn ghost small" onclick="openCurrentVideoSource()">원본</button>
                 </div>
-                <label>영상 코멘트</label><textarea id="videoMemo" placeholder="00:12 좌턴 상체 선행" oninput="markDirty()"></textarea>
+              </div>
+              <div class="card" style="border-radius:0 0 var(--r2) var(--r2);margin-top:0;border-top:0">
+                <label style="margin-top:0">영상 코멘트</label><textarea id="videoMemo" placeholder="00:12 좌턴 상체 선행" oninput="markDirty()"></textarea>
                 <div class="chips" style="margin-top:8px"><button class="chip" onclick="append('videoMemo','턴 초반 상체 선행')">턴 초반 상체</button><button class="chip" onclick="append('videoMemo','바깥발 하중 안정')">바깥발 하중</button><button class="chip" onclick="append('videoMemo','폴체킹 타이밍 좋음')">폴체킹</button></div>
               </div>
+              <div class="card">
+                <div class="filmstrip-head"><div class="section" style="margin-bottom:0"><h2 style="font-size:var(--fs-base)">오늘 미디어</h2><div class="small"><span id="mediaCount">0</span> selected</div></div><button class="btn ghost small" onclick="selectAll()">전체 선택</button></div>
+                <div class="filterbar" style="margin:8px 0"><button class="chip active" id="chipTotal">전체 0</button><button class="chip" id="chipPhoto">사진 0</button><button class="chip" id="chipVideo">영상 0</button></div>
+                <div class="media-grid filmstrip" id="mediaGrid"></div>
+              </div>
+            </div>
+
+            <div class="batch-feedback-pane">
               <div class="card em">
-                <div class="section"><h2>세션 피드백</h2><span class="pill">ONE RECORD</span></div>
+                <div class="section"><h2 style="font-size:var(--fs-base)">세션 피드백</h2><span class="pill">ONE RECORD</span></div>
                 <label>진행 기술</label><input id="skill" value="베이직 패러렐" oninput="markDirty()">
                 <label>잘한 점</label><textarea id="good" oninput="markDirty()">바깥발 하중이 이전보다 안정적이었고 턴 후반 자세가 좋아졌습니다.</textarea>
                 <label>보완할 점</label><textarea id="improve" oninput="markDirty()">좌턴에서 상체가 먼저 들어가는 경향이 남아 있습니다.</textarea>
@@ -225,14 +223,11 @@
         <main class="main">
           <div class="parent-cover">
             <div class="kicker">2026/27 SEASON</div>
-            <h1>김민준 성장 기록</h1>
-            <p>12 Lessons · 86 Media · 3 Skills</p>
+            <h1 id="parentHeroName">김민준 성장 기록</h1>
+            <p id="parentHeroStats">12 Lessons · 86 Media · 3 Skills</p>
           </div>
-          <div class="grid4">
-            <div class="metric"><span>누적 강습</span><b>12</b></div>
-            <div class="metric"><span>사진/영상</span><b>86</b></div>
-            <div class="metric"><span>진행 기술</span><b>3</b></div>
-            <div class="metric"><span>다음 목표</span><b>1</b></div>
+          <div class="parent-hero-media" id="parentHeroMedia">
+            <div class="phm-caption"><div class="small">LATEST SESSION</div><h2 id="parentHeroCaption">최신 강습을 기다리는 중</h2></div>
           </div>
           <div class="card">
             <div class="section"><h2>Season Progress</h2><span class="small">기술 진행</span></div>
@@ -414,6 +409,6 @@
 </div>
 
 <div id="toast" class="toast"></div>
-<script src="assets/app.js?v=2.2.0"></script>
+<script src="assets/app.js?v=2.3.0"></script>
 </body>
 </html>
