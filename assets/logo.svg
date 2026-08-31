@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60">
+<rect width="220" height="60" rx="16" fill="#F7F9F9"/>
+<circle cx="28" cy="30" r="16" fill="#16989B"/>
+<path d="M18 29c5-10 16-10 21 0-7-3-14-3-21 0Z" fill="#fff"/>
+<path d="M18 34c7-4 14-4 21 0" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+<text x="55" y="39" font-family="Arial, sans-serif" font-size="28" font-weight="800" fill="#1A2634">YUSIMI</text>
+</svg>
