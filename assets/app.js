@@ -20,23 +20,45 @@ const STOCK_PHOTOS=[
 ];
 const STOCK_VIDEO='https://www.pexels.com/download/video/4568014/';
 const STOCK_VIDEO_PAGE='https://www.pexels.com/video/a-person-skiing-on-a-mountain-4568014/';
+// v2.1: 미디어를 학생별로 분배 — Evening Batch에서 선택한 학생의 미디어만 노출됨
 let media=Array.from({length:30},(_,i)=>({
  id:i+1,
+ studentId:STUDENTS[i%STUDENTS.length].id,
  type:(i%5===0?'video':'photo'),
  selected:i<8,
  time:i<10?'10:08':i<20?'10:46':'11:31',
  src:STOCK_PHOTOS[i%STOCK_PHOTOS.length]
 }));
+let currentBatchStudent=STUDENTS[0].id;
 function pickRole(r,el){role=r;document.querySelectorAll('.rolecard').forEach(x=>x.classList.remove('active'));el.classList.add('active')}
 function login(){userName=document.getElementById('loginName').value.trim()||'최대표';document.getElementById('loginScreen').classList.add('hidden');document.getElementById('mainApp').classList.remove('hidden');switchRole(role)}
 function switchRole(r){role=r;document.querySelectorAll('.rolebtn').forEach(x=>x.classList.toggle('active',x.dataset.role===r));go(r==='admin'?'adminHome':r==='coach'?'coachHome':'parentHome')}
-function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');currentView=id;renderAll();window.scrollTo({top:0,behavior:'smooth'})}
+function go(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.getElementById(id).classList.add('active');currentView=id;renderAll();if(id==='coachBatch'){const s=document.getElementById('batchStudent');if(s&&s.value)currentBatchStudent=s.value;onBatchStudentChange()}window.scrollTo({top:0,behavior:'smooth'})}
 let toastTimer=null;
 function toast(t){const e=document.getElementById('toast');e.textContent=t;e.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.classList.remove('show'),1400)}
 const DEMO_DATE='2026-08-15';
 function today(){return DEMO_DATE}
 function renderAll(){renderAdmin();renderCoach();renderMedia();renderParent();renderExtraViews();fillStudents()}
-function fillStudents(){const s=document.getElementById('batchStudent');if(!s)return;const old=s.value;s.innerHTML=STUDENTS.map(x=>`<option value="${x.id}">${x.name} · ${x.program}</option>`).join('');if(old)s.value=old}
+function fillStudents(){
+ const s=document.getElementById('batchStudent');if(!s)return;
+ const old=s.value;
+ s.innerHTML=STUDENTS.map(x=>`<option value="${x.id}">${x.name} · ${x.program}</option>`).join('');
+ s.value=old||currentBatchStudent;
+ if(!s.onchange)s.onchange=()=>{currentBatchStudent=s.value;onBatchStudentChange()};
+}
+function onBatchStudentChange(){
+ const s=STUDENTS.find(x=>x.id===currentBatchStudent);
+ renderMedia();
+ // 해당 학생의 최근 강습 기록이 있으면 피드백 폼에 이어서 작성할 수 있도록 프리필
+ const prev=[...lessons].filter(l=>l.studentId===currentBatchStudent).sort((a,b)=>b.createdAt-a.createdAt)[0];
+ const skillEl=document.getElementById('skill'),goodEl=document.getElementById('good'),improveEl=document.getElementById('improve'),nextEl=document.getElementById('nextGoal'),memoEl=document.getElementById('videoMemo');
+ if(skillEl)skillEl.value=prev?prev.next:(s?s.level:'');
+ if(goodEl)goodEl.value='';
+ if(improveEl)improveEl.value='';
+ if(nextEl)nextEl.value=prev?prev.next:'';
+ if(memoEl)memoEl.value='';
+ toast(`${s?s.name:''} 학생으로 전환`);
+}
 function renderAdmin(){
  const todaySet=new Set(lessons.filter(l=>l.date===today()).map(l=>l.studentId));
  const done=Math.min(12,9+todaySet.size),missing=Math.max(0,12-done);
@@ -47,6 +69,9 @@ function renderAdmin(){
  <tr><td><b>김강사</b><div class="sub">주니어</div></td><td>4</td><td>4/4</td><td>91%</td><td><span class="pill">완료</span></td></tr>
  <tr><td><b>이강사</b><div class="sub">성인/주니어</div></td><td>5</td><td>5/5</td><td>78%</td><td><span class="pill">완료</span></td></tr>`;
  document.getElementById('adminActivity').innerHTML=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).slice(0,5).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<div class="activity"><span class="dot"></span><div><b>${s?.name}</b> 리포트 발행<div class="sub">${l.coach} · ${l.skill} · 미디어 ${l.media}개</div></div></div>`}).join('');
+ // 박지훈(s3) 리포트 실제 작성 여부에 따라 알림 표시/숨김
+ const pjhDone=todaySet.has('s3');
+ [document.getElementById('pjhAlertHome'),document.getElementById('pjhAlertPage')].forEach(box=>{if(box)box.classList.toggle('hidden',pjhDone)});
 }
 function renderCoach(){
  const doneToday=new Set(lessons.filter(l=>l.date===today()).map(l=>l.studentId));
@@ -55,55 +80,64 @@ function renderCoach(){
  ].map(([id,t,m])=>{const s=STUDENTS.find(x=>x.id===id),d=doneToday.has(id);return `<div class="listrow"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${t} · 미디어 ${m} · ${s.level}</div></div></div><div class="actionline"><span class="pill ${d?'':'warn'}">${d?'완료':'미작성'}</span><button class="btn ghost small" onclick="document.getElementById('batchStudent').value='${id}';go('coachBatch')">열기</button></div></div>`}).join('');
  document.getElementById('coachCount').textContent=lessons.length;
 }
+function studentMedia(){return media.filter(m=>m.studentId===currentBatchStudent)}
 function renderMedia(){
  const g=document.getElementById('mediaGrid'); if(!g)return;
- g.innerHTML=media.map(m=>`<button class="media ${m.type} ${m.selected?'selected':''}" onclick="toggleMedia(${m.id});previewMedia(${m.id})">
+ const list=studentMedia();
+ g.innerHTML=list.map(m=>`<button class="media ${m.type} ${m.selected?'selected':''}" onclick="toggleMedia(${m.id})">
    <span class="check">${m.selected?'✓':''}</span>
    ${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}
-   <img src="${m.src}" alt="ski lesson demo media">
+   <img src="${m.src}" alt="ski lesson demo media" onerror="this.closest('.media').classList.add('media-broken');this.style.display='none'">
    <span class="media-meta"><b>${m.type==='video'?'주행 영상':'강습 사진'} ${String(m.id).padStart(2,'0')}</b><span class="small">${m.time}</span></span>
  </button>`).join('');
- document.getElementById('mediaCount').textContent=media.filter(m=>m.selected).length;
+ document.getElementById('mediaCount').textContent=list.filter(m=>m.selected).length;
+ const totalChip=document.querySelector('.filterbar .chip:first-child');
+ if(totalChip)totalChip.textContent=`전체 ${list.length}`;
 }
 function toggleMedia(id){const m=media.find(x=>x.id===id);m.selected=!m.selected;renderMedia()}
-function selectAll(){const all=media.every(m=>m.selected);media.forEach(m=>m.selected=!all);renderMedia()}
+function selectAll(){const list=studentMedia();const all=list.every(m=>m.selected);list.forEach(m=>m.selected=!all);renderMedia()}
+// v2.1: 사진 클릭 시 주행영상 플레이어를 덮어쓰던 버그 제거 — 선택 표시(체크)만으로 충분하므로 no-op 처리
+function previewMedia(id){}
+function handleRunVideoError(){const e=document.getElementById('runVideoError');if(e)e.classList.remove('hidden')}
 function append(id,t){const e=document.getElementById(id);e.value+=(e.value?' · ':'')+t}
 function saveLesson(){
  const sid=document.getElementById('batchStudent').value, s=STUDENTS.find(x=>x.id===sid);
- const l={id:'l'+Date.now(),studentId:sid,date:today(),skill:document.getElementById('skill').value,good:document.getElementById('good').value,improve:document.getElementById('improve').value,next:document.getElementById('nextGoal').value,media:media.filter(m=>m.selected).length,coach:userName,createdAt:Date.now()};
- lessons.push(l);localStorage.setItem('yusimi_v2_lessons',JSON.stringify(lessons));renderAll();toast(`${s.name} 발행 완료`);setTimeout(()=>switchRole('parent'),700)
+ const l={id:'l'+Date.now(),studentId:sid,date:today(),skill:document.getElementById('skill').value,good:document.getElementById('good').value,improve:document.getElementById('improve').value,next:document.getElementById('nextGoal').value,media:studentMedia().filter(m=>m.selected).length,coach:userName,createdAt:Date.now()};
+ lessons.push(l);localStorage.setItem('yusimi_v2_lessons',JSON.stringify(lessons));
+ parentStudentId=sid; // Coach가 저장한 학생 기준으로 Parent 화면 즉시 반영
+ renderAll();toast(`${s.name} 발행 완료 · Parent에 반영됨`);setTimeout(()=>switchRole('parent'),700)
 }
+let parentStudentId='s1';
 function renderParent(){
- const ls=lessons.filter(l=>l.studentId==='s1').sort((a,b)=>b.createdAt-a.createdAt),l=ls[0];
- document.getElementById('parentLatest').innerHTML=l?`<div class="report"><div class="reporthead"><div class="small" style="color:rgba(255,255,255,.65)">LATEST REPORT</div><h2 style="margin:5px 0">${l.date} · ${l.coach}</h2><div>${l.skill}</div></div><div class="reportbody"><div class="rblock"><div class="rlabel">잘한 점</div>${l.good}</div><div class="rblock"><div class="rlabel">보완할 점</div>${l.improve}</div><div class="rblock"><div class="rlabel">다음 목표</div><b>${l.next}</b></div><div class="rblock"><div class="rlabel">미디어</div>${l.media}개 연결</div></div></div>`:'';
- document.getElementById('parentTimeline').innerHTML=ls.map(l=>`<div class="activity"><span class="dot"></span><div><b>${l.skill}</b><div class="sub">${l.date} · ${l.good}<br>다음 목표: ${l.next}</div></div></div>`).join('');
- document.getElementById('parentGallery').innerHTML=media.slice(0,12).map(m=>`<button class="thumb" onclick="${m.type==='video'?`window.open('${STOCK_VIDEO_PAGE}','_blank')`:`toast('강습 사진 ${String(m.id).padStart(2,'0')}')`}">${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}<img src="${m.src}" alt="ski lesson media" style="width:100%;height:100%;object-fit:cover"></button>`).join('');
+ const ps=STUDENTS.find(x=>x.id===parentStudentId);
+ const uname=document.querySelector('#parentHome .uname');if(uname&&ps)uname.textContent=ps.name;
+ const uavatar=document.querySelector('#parentHome .avatar');if(uavatar&&ps)uavatar.textContent=ps.name[0];
+ const coverTitle=document.querySelector('#parentHome .parent-cover h1');if(coverTitle&&ps)coverTitle.textContent=`${ps.name} 성장 기록`;
+ const ls=lessons.filter(l=>l.studentId===parentStudentId).sort((a,b)=>b.createdAt-a.createdAt),l=ls[0];
+ document.getElementById('parentLatest').innerHTML=l?`<div class="report"><div class="reporthead"><div class="small" style="color:rgba(255,255,255,.65)">LATEST REPORT</div><h2 style="margin:5px 0">${l.date} · ${l.coach}</h2><div>${l.skill}</div></div><div class="reportbody"><div class="rblock"><div class="rlabel">잘한 점</div>${l.good}</div><div class="rblock"><div class="rlabel">보완할 점</div>${l.improve}</div><div class="rblock"><div class="rlabel">다음 목표</div><b>${l.next}</b></div><div class="rblock"><div class="rlabel">미디어</div>${l.media}개 연결</div></div></div>`:'<div class="small muted" style="padding:14px 0">아직 발행된 리포트가 없습니다.</div>';
+ document.getElementById('parentTimeline').innerHTML=ls.map(l=>`<div class="activity"><span class="dot"></span><div><b>${l.skill}</b><div class="sub">${l.date} · ${l.good}<br>다음 목표: ${l.next}</div></div></div>`).join('')||'<div class="small muted">기록 없음</div>';
+ const pMedia=media.filter(m=>m.studentId===parentStudentId);
+ document.getElementById('parentGallery').innerHTML=pMedia.slice(0,12).map(m=>`<button class="thumb" onclick="${m.type==='video'?`window.open('${STOCK_VIDEO_PAGE}','_blank')`:`toast('강습 사진 ${String(m.id).padStart(2,'0')}')`}">${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}<img src="${m.src}" alt="ski lesson media" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"></button>`).join('');
 }
 
-function previewMedia(id){
- const m=media.find(x=>x.id===id);if(!m)return;
- const p=document.querySelector('#coachBatch .preview');
- if(!p)return;
- p.classList.add('real');
- if(m.type==='video'){
-   p.innerHTML=`<video controls poster="${m.src}"><source src="${STOCK_VIDEO}" type="video/mp4"></video><div class="preview-caption"><b>주행 영상 ${String(m.id).padStart(2,'0')}</b><span class="small">Pexels free stock video · 재생이 차단되면 <a href="${STOCK_VIDEO_PAGE}" target="_blank" style="color:#A8E8E9">원본 열기</a></span></div>`;
- }else{
-   p.innerHTML=`<img src="${m.src}" alt="ski demo"><div class="preview-caption"><b>강습 사진 ${String(m.id).padStart(2,'0')}</b><span class="small">${m.time} · 학생별 Lesson Record에 연결</span></div>`;
- }
-}
 function renderExtraViews(){
  const adminStudents=document.getElementById('adminStudentList');
  if(adminStudents)adminStudents.innerHTML=STUDENTS.map(s=>`<div class="listrow"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${s.program} · ${s.level}</div></div></div><span class="pill">활성</span></div>`).join('');
  const ar=document.getElementById('adminRecordRows');
- if(ar)ar.innerHTML=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<tr><td><b>${s?.name||'-'}</b><div class="sub">${l.date}</div></td><td>${l.coach}</td><td>${l.skill}</td><td>${l.media}개</td><td><span class="pill">발행</span></td></tr>`}).join('')+`<tr><td><b>박지훈</b><div class="sub">${today()}</div></td><td>${userName}</td><td>카빙 입문</td><td>8개</td><td><span class="pill warn">미작성</span></td></tr>`;
+ if(ar){
+  const publishedRows=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<tr><td><b>${s?.name||'-'}</b><div class="sub">${l.date}</div></td><td>${l.coach}</td><td>${l.skill}</td><td>${l.media}개</td><td><span class="pill">발행</span></td></tr>`}).join('');
+  const pjhToday=lessons.some(l=>l.studentId==='s3'&&l.date===today());
+  const pjhRow=pjhToday?'':`<tr><td><b>박지훈</b><div class="sub">${today()}</div></td><td>${userName}</td><td>카빙 입문</td><td>-</td><td><span class="pill warn">미작성</span></td></tr>`;
+  ar.innerHTML=publishedRows+pjhRow;
+ }
  const cs=document.getElementById('coachStudentCards');
  if(cs)cs.innerHTML=STUDENTS.map((s,i)=>{const ls=lessons.filter(l=>l.studentId===s.id).sort((a,b)=>b.createdAt-a.createdAt),l=ls[0];return `<div class="studentcard"><div class="student-head"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${s.program}</div></div></div><span class="pill">${s.level}</span></div><p>${l?`최근: ${l.skill}<br>다음 목표: ${l.next}`:'아직 누적 기록 없음'}</p><div class="actionline"><button class="btn ghost small" onclick="document.getElementById('batchStudent').value='${s.id}';go('coachBatch')">새 기록</button></div></div>`}).join('');
  const cr=document.getElementById('coachRecordList');
  if(cr)cr.innerHTML=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<div class="record-card"><div class="record-top"><div><b>${s?.name} · ${l.skill}</b><div class="sub">${l.date} · ${l.coach}</div></div><span class="pill">${l.media} media</span></div><p>${l.good}<br><b>다음:</b> ${l.next}</p></div>`}).join('');
  const pr=document.getElementById('parentReportArchive');
- if(pr){const ls=lessons.filter(l=>l.studentId==='s1').sort((a,b)=>b.createdAt-a.createdAt);pr.innerHTML=ls.map((l,i)=>`<div class="card ${i===0?'em':''}"><div class="section"><div><h2>${l.date}</h2><div class="small">${l.coach} · ${l.skill}</div></div>${i===0?'<span class="pill">NEW</span>':''}</div><div class="rblock"><div class="rlabel">잘한 점</div>${l.good}</div><div class="rblock"><div class="rlabel">보완할 점</div>${l.improve}</div><div class="rblock"><div class="rlabel">다음 목표</div><b>${l.next}</b></div><div class="rblock"><div class="rlabel">미디어</div>${l.media}개 연결</div></div>`).join('')}
+ if(pr){const ls=lessons.filter(l=>l.studentId===parentStudentId).sort((a,b)=>b.createdAt-a.createdAt);pr.innerHTML=ls.map((l,i)=>`<div class="card ${i===0?'em':''}"><div class="section"><div><h2>${l.date}</h2><div class="small">${l.coach} · ${l.skill}</div></div>${i===0?'<span class="pill">NEW</span>':''}</div><div class="rblock"><div class="rlabel">잘한 점</div>${l.good}</div><div class="rblock"><div class="rlabel">보완할 점</div>${l.improve}</div><div class="rblock"><div class="rlabel">다음 목표</div><b>${l.next}</b></div><div class="rblock"><div class="rlabel">미디어</div>${l.media}개 연결</div></div>`).join('')||'<div class="small muted" style="padding:14px 0">아직 리포트가 없습니다.</div>'}
  const pm=document.getElementById('parentMediaArchive');
- if(pm)pm.innerHTML=media.slice(0,8).map(m=>`<button class="thumb" onclick="${m.type==='video'?`window.open('${STOCK_VIDEO_PAGE}','_blank')`:`toast('강습 사진 ${String(m.id).padStart(2,'0')} 확대 보기')`}">${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}<img src="${m.src}" alt="ski lesson media"></button>`).join('');
+ if(pm){const pms=media.filter(m=>m.studentId===parentStudentId);pm.innerHTML=pms.slice(0,8).map(m=>`<button class="thumb" onclick="${m.type==='video'?`window.open('${STOCK_VIDEO_PAGE}','_blank')`:`toast('강습 사진 ${String(m.id).padStart(2,'0')} 확대 보기')`}">${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}<img src="${m.src}" alt="ski lesson media" onerror="this.style.display='none'"></button>`).join('')}
 }
 
 
@@ -121,6 +155,7 @@ function selectRunVideo(i){
  document.getElementById('runVideoTitle').textContent=d.title;
  document.getElementById('runVideoDesc').textContent=d.desc;
  document.querySelectorAll('[data-runvideo]').forEach((b,idx)=>b.classList.toggle('active',idx===i));
+ const e=document.getElementById('runVideoError');if(e)e.classList.add('hidden');
 }
 function rewindRunVideo(){const v=document.getElementById('runVideoPlayer');if(v)v.currentTime=Math.max(0,v.currentTime-5)}
 function forwardRunVideo(){const v=document.getElementById('runVideoPlayer');if(v)v.currentTime=Math.min(Number.isFinite(v.duration)?v.duration:9999,v.currentTime+5)}
