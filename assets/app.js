@@ -58,6 +58,7 @@ function onBatchStudentChange(){
  if(nextEl)nextEl.value=prev?prev.next:'';
  if(memoEl)memoEl.value='';
  setSaveState(false);
+ const lineEl=document.getElementById('batchStudentLine');if(lineEl&&s)lineEl.textContent=`${s.name} · ${s.program} · 오늘 세션 피드백`;
  toast(`${s?s.name:''} 학생으로 전환`);
 }
 function renderAdmin(){
@@ -65,22 +66,38 @@ function renderAdmin(){
  const done=Math.min(12,9+todaySet.size),missing=Math.max(0,12-done);
  document.getElementById('adminDone').textContent=done;
  document.getElementById('adminMissing').textContent=missing;
+ const headline=document.getElementById('adminMissingHeadline');
+ if(headline)headline.textContent=missing>0?`${missing}건`:'0건';
  document.getElementById('coachStatus').innerHTML=`
  <tr><td data-label="강사"><b>최대표</b><div class="sub">주니어/개인</div></td><td data-label="강습">3</td><td data-label="완료">${Math.min(3,1+todaySet.size)}/3</td><td data-label="열람률">86%</td><td data-label="상태"><span class="pill ${todaySet.size>=2?'':'warn'}">${todaySet.size>=2?'완료':'작성 중'}</span></td></tr>
  <tr><td data-label="강사"><b>김강사</b><div class="sub">주니어</div></td><td data-label="강습">4</td><td data-label="완료">4/4</td><td data-label="열람률">91%</td><td data-label="상태"><span class="pill">완료</span></td></tr>
  <tr><td data-label="강사"><b>이강사</b><div class="sub">성인/주니어</div></td><td data-label="강습">5</td><td data-label="완료">5/5</td><td data-label="열람률">78%</td><td data-label="상태"><span class="pill">완료</span></td></tr>`;
  document.getElementById('adminActivity').innerHTML=[...lessons].sort((a,b)=>b.createdAt-a.createdAt).slice(0,5).map(l=>{const s=STUDENTS.find(x=>x.id===l.studentId);return `<div class="activity"><span class="dot"></span><div><b>${s?.name}</b> 리포트 발행<div class="sub">${l.coach} · ${l.skill} · 미디어 ${l.media}개</div></div></div>`}).join('');
- // 박지훈(s3) 리포트 실제 작성 여부에 따라 알림 표시/숨김
+ // 지금 처리할 업무 큐 — 박지훈 미작성 여부를 실제 저장 상태로 판단
  const pjhDone=todaySet.has('s3');
- [document.getElementById('pjhAlertHome'),document.getElementById('pjhAlertPage')].forEach(box=>{if(box)box.classList.toggle('hidden',pjhDone)});
+ const queueItems=[];
+ if(!pjhDone)queueItems.push({icon:'⏱',urgent:true,title:'최대표 · 박지훈 16:30 강습',sub:'아직 미작성',action:'리마인드',onclick:"toast('리마인드 전송')"});
+ queueItems.push({icon:'👁',urgent:false,title:'Parent 미열람 3건',sub:'발행 후 6시간 경과',action:'보기',onclick:"toast('미열람 목록')"});
+ queueItems.push({icon:'🔄',urgent:false,title:'담당 강사 변경 1건',sub:'내일 10:00 · 김민준 → 이강사',action:'확인',onclick:"toast('인수인계 확인')"});
+ document.getElementById('adminQueue').innerHTML=queueItems.map(q=>`<div class="q-row ${q.urgent?'urgent':''}"><div class="q-icon">${q.icon}</div><div class="q-body"><div class="q-title">${q.title}</div><div class="q-sub">${q.sub}</div></div><button class="btn ${q.urgent?'warn':'ghost'} small" onclick="${q.onclick}">${q.action}</button></div>`).join('')||'<div class="empty-state">지금 처리할 업무가 없습니다.</div>';
+ // 알림 페이지(adminAlerts)의 박지훈 알림도 실제 상태 반영
+ const pjhAlertPage=document.getElementById('pjhAlertPage');
+ if(pjhAlertPage)pjhAlertPage.classList.toggle('hidden',pjhDone);
 }
 function renderCoach(){
  const doneToday=new Set(lessons.filter(l=>l.date===today()).map(l=>l.studentId));
  const todaySessions=[['s1','10:00','24'],['s2','13:30','14'],['s3','16:30','8']];
  const missing=todaySessions.filter(([id])=>!doneToday.has(id)).length;
- const heroTitle=document.getElementById('coachHeroTitle');if(heroTitle)heroTitle.textContent=missing>0?`마감 ${missing}건 남음`:'오늘 마감 완료';
+ const heroTitle=document.getElementById('coachHeroTitle');
+ if(heroTitle)heroTitle.innerHTML=missing>0?`마감 <b>${missing}건</b> 남음`:'오늘 마감 <b>완료</b>';
  const badge=document.getElementById('coachTodayBadge');
  if(badge){badge.textContent=missing>0?`${missing} 미작성`:'모두 완료';badge.classList.toggle('warn',missing>0)}
+ let firstNextMarked=false;
+ document.getElementById('coachTimelineStrip').innerHTML=todaySessions.map(([id,t])=>{
+  const s=STUDENTS.find(x=>x.id===id),d=doneToday.has(id);
+  const isNext=!d&&!firstNextMarked;if(isNext)firstNextMarked=true;
+  return `<div class="tl-item ${d?'done':''} ${isNext?'next':''}"><div class="tl-dot"></div><div class="tl-time">${t}</div><div class="tl-name">${s.name}</div><div class="tl-tag">${d?'완료':isNext?'다음 순서':'대기'}</div></div>`;
+ }).join('');
  document.getElementById('coachToday').innerHTML=todaySessions
   .map(([id,t,m])=>{const s=STUDENTS.find(x=>x.id===id),d=doneToday.has(id);return `<div class="listrow"><div class="person"><div class="avatar">${s.name[0]}</div><div><div class="name">${s.name}</div><div class="sub">${t} · 미디어 ${m} · ${s.level}</div></div></div><div class="actionline"><span class="pill ${d?'':'warn'}">${d?'완료':'미작성'}</span><button class="btn ghost small" onclick="document.getElementById('batchStudent').value='${id}';go('coachBatch')">열기</button></div></div>`}).join('');
  document.getElementById('coachCount').textContent=lessons.length;
@@ -128,11 +145,23 @@ function renderParent(){
  const ps=STUDENTS.find(x=>x.id===parentStudentId);
  const uname=document.querySelector('#parentHome .uname');if(uname&&ps)uname.textContent=ps.name;
  const uavatar=document.querySelector('#parentHome .avatar');if(uavatar&&ps)uavatar.textContent=ps.name[0];
- const coverTitle=document.querySelector('#parentHome .parent-cover h1');if(coverTitle&&ps)coverTitle.textContent=`${ps.name} 성장 기록`;
+ const heroName=document.getElementById('parentHeroName');if(heroName&&ps)heroName.textContent=`${ps.name} 성장 기록`;
  const ls=lessons.filter(l=>l.studentId===parentStudentId).sort((a,b)=>b.createdAt-a.createdAt),l=ls[0];
+ const pMedia=media.filter(m=>m.studentId===parentStudentId);
+ const heroStats=document.getElementById('parentHeroStats');if(heroStats)heroStats.textContent=`${ls.length} Lessons · ${pMedia.length} Media`;
+ const heroMediaBox=document.getElementById('parentHeroMedia'),heroCaption=document.getElementById('parentHeroCaption');
+ if(heroMediaBox){
+  const cover=pMedia.find(m=>m.type==='photo')||pMedia[0];
+  if(cover){
+   heroMediaBox.style.backgroundImage='none';
+   const existingImg=heroMediaBox.querySelector('img');
+   if(!existingImg){const img=document.createElement('img');img.alt='최신 강습 사진';img.onerror=function(){this.style.display='none'};heroMediaBox.prepend(img)}
+   heroMediaBox.querySelector('img').src=cover.src;
+  }
+  if(heroCaption)heroCaption.textContent=l?`${l.date} · ${l.skill}`:'최신 강습을 기다리는 중';
+ }
  document.getElementById('parentLatest').innerHTML=l?`<div class="report"><div class="reporthead"><div class="small" style="color:rgba(255,255,255,.65)">LATEST REPORT</div><h2 style="margin:5px 0">${l.date} · ${l.coach}</h2><div>${l.skill}</div></div><div class="reportbody"><div class="rblock good"><div class="rblock-body"><div class="rlabel">잘한 점</div>${l.good}</div></div><div class="rblock improve"><div class="rblock-body"><div class="rlabel">보완할 점</div>${l.improve}</div></div><div class="rblock next"><div class="rblock-body"><div class="rlabel">다음 목표</div><b>${l.next}</b></div></div><div class="rblock"><div class="rblock-body"><div class="rlabel">미디어</div>${l.media}개 연결</div></div></div></div>`:'<div class="empty-state">아직 발행된 리포트가 없습니다.</div>';
  document.getElementById('parentTimeline').innerHTML=ls.map(l=>`<div class="activity"><span class="dot"></span><div><b>${l.skill}</b><div class="sub">${l.date} · ${l.good}<br>다음 목표: ${l.next}</div></div></div>`).join('')||'<div class="empty-state">기록 없음</div>';
- const pMedia=media.filter(m=>m.studentId===parentStudentId);
  document.getElementById('parentGallery').innerHTML=pMedia.slice(0,12).map(m=>`<button class="thumb" onclick="${m.type==='video'?`window.open('${STOCK_VIDEO_PAGE}','_blank')`:`toast('강습 사진 ${String(m.id).padStart(2,'0')}')`}">${m.type==='video'?'<span class="video-badge">VIDEO</span>':''}<img src="${m.src}" alt="ski lesson media" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'"></button>`).join('');
 }
 
